@@ -19,8 +19,8 @@ package com.google.gson.internal.bind;
 import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
 import com.google.gson.TypeAdapterFactory;
-import com.google.gson.internal.$Gson$Types;
 import com.google.gson.internal.ConstructorConstructor;
+import com.google.gson.internal.GsonTypes;
 import com.google.gson.internal.ObjectConstructor;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
@@ -47,11 +47,14 @@ public final class CollectionTypeAdapterFactory implements TypeAdapterFactory {
       return null;
     }
 
-    Type elementType = $Gson$Types.getCollectionElementType(type, rawType);
+    Type elementType = GsonTypes.getCollectionElementType(type, rawType);
     TypeAdapter<?> elementTypeAdapter = gson.getAdapter(TypeToken.get(elementType));
     TypeAdapter<?> wrappedTypeAdapter =
         new TypeAdapterRuntimeTypeWrapper<>(gson, elementTypeAdapter, elementType);
-    ObjectConstructor<T> constructor = constructorConstructor.get(typeToken);
+    // Don't allow Unsafe usage to create instance; instances might be in broken state and calling
+    // Collection methods could lead to confusing exceptions
+    boolean allowUnsafe = false;
+    ObjectConstructor<T> constructor = constructorConstructor.get(typeToken, allowUnsafe);
 
     @SuppressWarnings({"unchecked", "rawtypes"}) // create() doesn't define a type parameter
     TypeAdapter<T> result = new Adapter(wrappedTypeAdapter, constructor);
